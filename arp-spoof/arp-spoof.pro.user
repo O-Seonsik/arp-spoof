@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.12.4, 2020-08-08T14:40:07. -->
+<!-- Written by QtCreator 4.12.4, 2020-08-12T12:12:20. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -308,7 +308,7 @@
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/home/linesys/QtProject/arp-spoof/arp-spoof/arp-spoof.pro</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/home/linesys/QtProject/arp-spoof/arp-spoof/arp-spoof.pro</value>
-    <value type="QString" key="RunConfiguration.Arguments">wlx909f330e557f 192.168.123.23 192.168.123.254 192.168.123.254 192.168.123.23</value>
+    <value type="QString" key="RunConfiguration.Arguments">wlx909f330e557f 192.168.123.6 192.168.123.254 192.168.123.254 192.168.123.6</value>
     <value type="bool" key="RunConfiguration.Arguments.multi">false</value>
     <value type="QString" key="RunConfiguration.OverrideDebuggerStartup"></value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
